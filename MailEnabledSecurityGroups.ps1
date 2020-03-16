@@ -50,7 +50,7 @@ foreach ($DL in $mailEnabledSGs)
 }
 
 
-$filteredDLs = $mailEnabledSGs | Where-Object {$_.ManagedBy -match "username"}
+$filteredDLs = $mailEnabledSGs | Where-Object {$_.ManagedBy -match "rhonemus"}
 $filteredDLs = $mailEnabledSGs | Where-Object {$_.Name -notmatch "DL-" -and $_.name -notmatch "SG-" }
 
 
@@ -76,11 +76,11 @@ foreach ($DL in $filteredDLs)
 
     Set-Adgroup $DL.newname -Remove @{ProxyAddresses=smtp:$DL.PrimarySMTPaddress}
     #move Newly renamed group to Domain Groups OU
-    Get-Adgroup $DL.newname | Move-ADObject  -TargetPath "OU=Domain Groups,OU=Domain Users,DC=,DC=,DC=com"
+    Get-Adgroup $DL.newname | Move-ADObject  -TargetPath "OU=Domain Groups,OU=Domain Users,DC=ad,DC=mc,DC=com"
 
     #Create New DL
     $alias = $DL.DLcreated -replace " ","_"
-    $NewDL = New-DistributionGroup -Name $DL.name -Alias $alias -OrganizationalUnit "DomainName/Exchange Objects/Distribution Lists" -MemberDepartRestriction Closed -MemberJoinRestriction Closed -ManagedBy rhonemus
+    $NewDL = New-DistributionGroup -Name $DL.name -Alias $alias -OrganizationalUnit "ad.mc.com/Exchange Objects/Distribution Lists" -MemberDepartRestriction Closed -MemberJoinRestriction Closed -ManagedBy rhonemus
     
     #Get current Emailaddresses
     $NewEmails = $NewDL | Select-Object -ExpandProperty EmailAddresses
@@ -126,15 +126,15 @@ foreach ($DL in $filteredDLs)
        $Group = Get-Adgroup $DL.Name | Rename-ADObject -NewName $DL.NewName -PassThru
     }
     #Move Group 
-    if ($DL.DistinguishedName -match "OU=Distribution Lists,OU=Exchange Objects,DC=,DC=,DC=com")
+    if ($DL.DistinguishedName -match "OU=Distribution Lists,OU=Exchange Objects,DC=ad,DC=mc,DC=com")
     {
-        $Group = Get-Adgroup $Group.name | Move-ADObject -TargetPath "OU=Domain Groups,OU=Domain Users,DC=,DC=,DC=" -PassThru
+        $Group = Get-Adgroup $Group.name | Move-ADObject -TargetPath "OU=Domain Groups,OU=Domain Users,DC=ad,DC=mc,DC=com" -PassThru
     }
     
     #Create New Dynamic DL
     $alias = $DL.DLcreated -replace " ","_"
     $DistinguishedName = $Group.DistinguishedName
-    $NewDL = New-DynamicDistributionGroup -Name $DL.name -Alias $alias -OrganizationalUnit "DomainName/Exchange Objects/Distribution Lists" -RecipientFilter {((RecipientType -eq 'UserMailbox') -and (memberOfgroup -eq "$DistinguishedName"))}
+    $NewDL = New-DynamicDistributionGroup -Name $DL.name -Alias $alias -OrganizationalUnit "ad.mc.com/Exchange Objects/Distribution Lists" -RecipientFilter {((RecipientType -eq 'UserMailbox') -and (memberOfgroup -eq "$DistinguishedName"))}
     
     #Get current Emailaddresses 
     $NewEmails = $NewDL | Select-Object -ExpandProperty EmailAddresses
